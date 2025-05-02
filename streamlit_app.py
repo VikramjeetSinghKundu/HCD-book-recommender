@@ -1,114 +1,109 @@
-"""
-Streamlit app: Longformer-based Book Recommender + free HF-RAG chat
--------------------------------------------------------------------
-Files expected in same folder:
-  • books_processed.parquet   (parent_asin, book_title, category, embeddings_proc)
-  • requirements.txt          (see README)
-"""
-
-import os, time, faiss, torch, numpy as np, pandas as pd, streamlit as st
+# app.py  ──────────────────────────────────────────────────────────────
+import os, re, faiss, torch, streamlit as st
+import pandas as pd, numpy as np
 from transformers import AutoTokenizer, AutoModel
-from huggingface_hub import InferenceClient   # free text-generation API
+from huggingface_hub import InferenceClient
 
-MODEL_ID = "allenai/longformer-base-4096"     # same model used offline
-GEN_MODEL = "mistralai/Mistral-7B-Instruct-v0.2"   # HF hosted, free
+# ─────────────── 1.  Cached loaders ───────────────
+@st.cache_resource(hash_funcs={"_faiss.Index": id})
+def load_data():
+    # vectors
+    vec_df = pd.read_parquet("books_processed.parquet")
+    vecs   = np.stack(vec_df.vec.values).astype("float32")
+    faiss.normalize_L2(vecs)
+    index  = faiss.IndexFlatIP(vecs.shape[1]); index.add(vecs)
+    # metadata
+    meta_df = pd.read_parquet("books_metadata.parquet").set_index(vec_df.index)
+    return vec_df, meta_df, vecs, index
 
-# ──────────────────────────────────────────────────────────────────────────
-# 1. CACHED RESOURCES
-# ──────────────────────────────────────────────────────────────────────────
 @st.cache_resource
 def load_longformer():
-    tok = AutoTokenizer.from_pretrained(MODEL_ID)
-    mdl = AutoModel.from_pretrained(MODEL_ID).to("cpu").eval()
+    tok  = AutoTokenizer.from_pretrained("allenai/longformer-base-4096")
+    mdl  = AutoModel.from_pretrained("allenai/longformer-base-4096").to("cpu").eval()
     return tok, mdl
 
-@st.cache_resource(hash_funcs={"_faiss.Index": id})
-def load_index():
-    df   = pd.read_parquet("books_processed.parquet")
-    vecs = np.stack(df.embeddings_proc.values).astype("float32")
-    faiss.normalize_L2(vecs)                       # cosine via inner-product
-    index = faiss.IndexFlatIP(vecs.shape[1]); index.add(vecs)
-    return df, index, vecs
-
+vec_df, meta_df, vecs, index = load_data()
 tokenizer, model = load_longformer()
-df, index, all_vecs = load_index()
 
-# optional chat client (works even without token but with strict rate limit)
-hf_token = st.secrets.get("HF_API_TOKEN") or os.getenv("HF_API_TOKEN", "")
-chat_client = InferenceClient(model=GEN_MODEL, token=hf_token, timeout=30)
+# free HF inference client (Mistral‑7B)
+chat = InferenceClient(
+    model="mistralai/Mistral-7B-Instruct-v0.2",
+    token=os.getenv("HF_API_TOKEN", st.secrets.get("HF_API_TOKEN", "")),
+    timeout=30
+)
 
-# ──────────────────────────────────────────────────────────────────────────
-# 2.  EMBEDDING HELPER  (Longformer mean-pool)
-# ──────────────────────────────────────────────────────────────────────────
-def embed_longformer(texts: list[str]) -> np.ndarray:
+# ─────────────── 2.  Helpers ───────────────
+def embed_longformer(texts:list[str]) -> np.ndarray:
     with torch.no_grad():
-        enc = tokenizer(
-            texts, padding="longest", truncation=True,
-            max_length=4096, return_tensors="pt"
-        )
-        enc = {k: v.to(model.device) for k, v in enc.items()}
-        out = model(**enc).last_hidden_state               # (B, L, 768)
-        mask = enc["attention_mask"].unsqueeze(-1).expand(out.size()).float()
-        vec  = (out * mask).sum(1) / mask.sum(1).clamp(min=1e-9)
+        enc = tokenizer(texts, padding="longest",
+                        truncation=True, max_length=4096,
+                        return_tensors="pt").to(model.device)
+        hid  = model(**enc).last_hidden_state
+        m    = enc.attention_mask.unsqueeze(-1).expand(hid.size()).float()
+        vec  = (hid * m).sum(1) / m.sum(1).clamp(min=1e-9)
         vec  = torch.nn.functional.normalize(vec, p=2, dim=1)
     return vec.cpu().numpy()
 
-# ──────────────────────────────────────────────────────────────────────────
-# 3.  STREAMLIT UI
-# ──────────────────────────────────────────────────────────────────────────
-st.set_page_config(page_title="📚 Longformer Book Recommender", page_icon="📚")
-st.title("📚 Book Recommender (Longformer + RAG Chat)")
+def parse_query(q:str):
+    out = {"author":None, "category":None, "clean":q}
+    m = re.search(r"by ([\w\s'.-]+)", q, re.I)
+    if m:
+        out["author"] = m.group(1).strip()
+        out["clean"]  = out["clean"].replace(m.group(0), "")
+    m = re.search(r"in ([\w &]+)", out["clean"], re.I)
+    if m:
+        out["category"] = m.group(1).strip()
+        out["clean"]    = out["clean"].replace(m.group(0), "")
+    return out
 
-mode = st.radio("Recommend by …", ["Book title", "Text query"])
+def smart_recommend(user_q:str, k:int=5):
+    info = parse_query(user_q)
+    mask = np.ones(len(vec_df), dtype=bool)
+    if info["author"]:
+        mask &= meta_df.author.str.contains(info["author"], case=False, na=False)
+    if info["category"]:
+        mask &= meta_df.category.str.contains(info["category"], case=False, na=False)
+    cand = np.where(mask)[0]
+    if cand.size == 0: cand = np.arange(len(vec_df))
 
-if mode == "Book title":
-    pick = st.selectbox(
-        "Pick a book (sampled list for speed)",
-        df.book_title.sample(5000).sort_values().tolist()
+    qvec = embed_longformer([info["clean"]])
+    D,I  = index.search(qvec, len(cand))
+    ids, sims = I[0], D[0]
+
+    # keep order & filter
+    picked = [i for i in ids if i in cand][:k]
+    sims   = sims[[np.where(ids==i)[0][0] for i in picked]]
+
+    recs = meta_df.iloc[picked][["book_title","author","category"]].copy()
+    recs["similarity"] = sims
+    return recs.reset_index(drop=True), info
+
+def explain(user_q, recs):
+    titles = "\n".join(f"• {r.book_title} — {r.author or 'Unknown'}"
+                       for r in recs.itertuples())
+    prompt = (
+      "You are a friendly bookseller.\n\n"
+      f"User request: {user_q}\n"
+      f"Candidate books:\n{titles}\n\n"
+      "Explain briefly why these match, then suggest one other title.\n\nAssistant:"
     )
-    if st.button("Find similar"):
-        row_idx = df[df.book_title == pick].index[0]
-        sims, ids = index.search(all_vecs[row_idx:row_idx+1], 6)
-        recs = df.iloc[ids[0][1:]][["book_title", "category"]].copy()
-        recs["similarity"] = sims[0][1:]
-        st.dataframe(recs.reset_index(drop=True))
+    ans = chat.text_generation(prompt, max_new_tokens=180,
+                               temperature=0.7, top_p=0.9).strip()
+    return ans
 
-        # Chatty explanation
-        titles_block = "\n".join("• "+t for t in recs.book_title.tolist())
-        with st.spinner("🗣️ Generating friendly explanation…"):
-            reply = chat_client.text_generation(
-                prompt=(
-                  "You are a helpful bookseller.\n\n"
-                  f"User chose: {pick}\n"
-                  f"Here are similar books:\n{titles_block}\n\n"
-                  "Describe why these suggestions fit.\n\nAssistant:"
-                ),
-                max_new_tokens=180, temperature=0.7, top_p=0.9
-            )
-        st.markdown("### Chatty answer")
-        st.write(reply.strip())
+# ─────────────── 3.  Streamlit UI ───────────────
+st.set_page_config(page_title="📚 Book Chat", page_icon="📚")
+st.title("📚 Conversational Book Recommender")
 
-else:   # Text query mode
-    query = st.text_area("Describe what you’d like to read")
-    k     = st.slider("Results", 3, 10, 5)
-    if st.button("Recommend"):
-        qvec = embed_longformer([query])
-        sims, ids = index.search(qvec, k)
-        recs = df.iloc[ids[0]][["book_title", "category"]].copy()
-        recs["similarity"] = sims[0]
-        st.dataframe(recs.reset_index(drop=True))
+q = st.text_input("Tell me what you’d like to read")
+k = st.slider("How many suggestions?", 3, 10, 5)
 
-        titles_block = "\n".join("• "+t for t in recs.book_title.tolist())
-        with st.spinner("🗣️ Generating friendly explanation…"):
-            reply = chat_client.text_generation(
-                prompt=(
-                  "You are a helpful bookseller.\n\n"
-                  f"User request: {query}\n"
-                  f"Here are candidate books:\n{titles_block}\n\n"
-                  "Explain why they match.\n\nAssistant:"
-                ),
-                max_new_tokens=180, temperature=0.7, top_p=0.9
-            )
-        st.markdown("### Chatty answer")
-        st.write(reply.strip())
+if st.button("Recommend"):
+    with st.spinner("Searching…"):
+        recs, info = smart_recommend(q, k)
+    st.dataframe(recs)
 
+    with st.spinner("Generating explanation…"):
+        chat_reply = explain(q, recs)
+    st.markdown("### Bookseller says")
+    st.write(chat_reply)
