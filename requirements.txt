@@ -1,4 +1,6 @@
 streamlit
+torch
 faiss-cpu
+transformers
 sentence-transformers
 huggingface_hub
