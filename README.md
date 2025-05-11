@@ -58,20 +58,20 @@ The app fetches them automatically the first time it runs and caches them under
 
 > Tested on Python 3.10, macOS 13 and Codespaces.
 
-# 1. clone
+# 1. Clone
 git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git
 cd HCD-book-recommender
 
-# 2. create environment (conda or venv)
+# 2. Create environment (conda or venv)
 python -m venv .venv
 source .venv/bin/activate
 
-# 3. install deps
+# 3. Install deps
 pip install -r requirements.txt
 # ➜ ~1 GB download inc. Longformer / Zephyr weights
 
-# 4. set HF token for Zephyr endpoint
+# 4. Set HF token for Zephyr endpoint
 export HF_API_TOKEN= <Token already included in the repository>
 
-# 5. run
+# 5. Run
 streamlit run streamlit_app.py
