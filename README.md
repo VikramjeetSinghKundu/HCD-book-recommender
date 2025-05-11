@@ -31,11 +31,11 @@ short, LLM‑generated “bookseller” explanation.
 
 ## 🗂 Repository structure
 
-.
-├── streamlit_app.py <- main app
-├── requirements.txt <- Python dependencies
-├── README.md <- you are here
-└── docs/ <- screenshots / demo gif (optional)
+HCD-book-recommender/
+├── .github/
+├── streamlit_app.py
+├── requirements.txt
+├── README.md               
 
 
 Large data files are **not** stored in the repo; they are pulled on‑demand
