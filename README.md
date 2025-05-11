@@ -1,4 +1,4 @@
-x# 📚 HCD   Book   Recommender
+# 📚 HCD   Book   Recommender
 
 Longformer‑based dense retrieval + hybrid metadata scoring, wrapped in an
 interactive Streamlit app.  
