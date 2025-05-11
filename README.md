@@ -1,11 +1,14 @@
-# 📚 HCD Book Recommender
+x# 📚 HCD   Book   Recommender
 
 Longformer‑based dense retrieval + hybrid metadata scoring, wrapped in an
 interactive Streamlit app.  
+
 Enter any free‑text request—
 
 *“space‑opera by Frank Herbert”*,
+
 *“picture books about confidence building”*,
+
 *“latest CPA exam prep”*—
 
 and the system returns semantically similar Amazon books together with a
@@ -32,11 +35,13 @@ short, LLM‑generated “bookseller” explanation.
 ## 🗂 Repository structure
 
 HCD-book-recommender/
+├── .devcontainer/
 ├── .github/
+├── .gitignore/ 
 ├── streamlit_app.py
 ├── requirements.txt
 ├── README.md               
-
+             
 
 Large data files are **not** stored in the repo; they are pulled on‑demand
 from our Hugging Face dataset:
