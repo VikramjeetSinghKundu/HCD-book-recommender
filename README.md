@@ -60,11 +60,11 @@ The app fetches them automatically the first time it runs and caches them.
 > Tested on Python 3.10, macOS 13 and Codespaces.
 
 # 1. Clone
-git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git/
+git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git\
 cd HCD-book-recommender
 
 # 2. Create environment (conda or venv)
-python -m venv .venv/
+python -m venv .venv\
 source .venv/bin/activate
 
 # 3. Install deps
