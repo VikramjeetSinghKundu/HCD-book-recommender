@@ -39,10 +39,10 @@ HCD-book-recommender/\
 ├── .github/\
 ├── .gitignore/\
 ├── .streamlit/\
-   ├── secrets.toml\
+&nbsp;&nbsp;&nbsp;&nbsp;   ├── secrets.toml\
 ├── streamlit_app.py\
 ├── requirements.txt\
-├── README.md\               
+├── README.md               
              
 
 Large data files are **not** stored in the repo; they are pulled on‑demand
