@@ -1,6 +1,8 @@
-streamlit
-torch
+streamlit>=1.34
+torch>=2.2
+transformers>=4.40
 faiss-cpu
-transformers
-sentence-transformers
 huggingface_hub
+pyarrow>=14
+numpy>=1.24
+pandas>=2.1
