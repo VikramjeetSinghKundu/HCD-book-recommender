@@ -34,15 +34,15 @@ short, LLM‑generated “bookseller” explanation.
 
 ## 🗂 Repository structure
 
-HCD-book-recommender/
-├── .devcontainer/
-├── .github/
-├── .gitignore/
-├── .streamlit/
-   ├── secrets.toml
-├── streamlit_app.py
-├── requirements.txt
-├── README.md               
+HCD-book-recommender/\
+├── .devcontainer/\
+├── .github/\
+├── .gitignore/\
+├── .streamlit/\
+   ├── secrets.toml\
+├── streamlit_app.py\
+├── requirements.txt\
+├── README.md\               
              
 
 Large data files are **not** stored in the repo; they are pulled on‑demand
@@ -51,8 +51,7 @@ from our Hugging Face dataset:
 * [`books_processed.parquet`](https://huggingface.co/datasets/VikramjeetSingh/books-recs)  – 3.0 GB, 768‑d review vectors  
 * `books_metadata_small.parquet` – 160 MB, author + category + snippet  
 
-The app fetches them automatically the first time it runs and caches them under
-`~/.cache/huggingface/`.
+The app fetches them automatically the first time it runs and caches them.
 
 ---
 
