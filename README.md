@@ -37,7 +37,9 @@ short, LLM‑generated “bookseller” explanation.
 HCD-book-recommender/
 ├── .devcontainer/
 ├── .github/
-├── .gitignore/ 
+├── .gitignore/
+├── .streamlit/
+   ├── secrets.toml
 ├── streamlit_app.py
 ├── requirements.txt
 ├── README.md               
