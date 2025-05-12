@@ -64,7 +64,7 @@ git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git \
 cd HCD-book-recommender
 
 # 2. Create environment (conda or venv)
-python -m venv .venv\
+python3 -m venv .venv\
 source .venv/bin/activate
 
 # 3. Install deps
@@ -76,3 +76,6 @@ export HF_API_TOKEN= "Token present in the secrets.toml file"
 
 # 5. Run
 streamlit run streamlit_app.py
+
+
+### Note: Ideally this should work but 
