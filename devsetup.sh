@@ -30,7 +30,7 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
     echo "▶ installing Homebrew’s libomp …"
     brew install libomp
   fi
-  export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libomp/lib:$DYLD_LIBRARY_PATH"
+  export DYLD_LIBRARY_PATH="/opt/homebrew/opt/libomp/lib:${DYLD_LIBRARY_PATH:-}"
 fi
 
 # ── delete wheel‑bundled libomp duplicates from torch / faiss ─────────────────
