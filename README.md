@@ -41,6 +41,7 @@ HCD-book-recommender/\
 ├── .streamlit/\
 &nbsp;&nbsp;&nbsp;&nbsp;   ├── secrets.toml\
 ├── streamlit_app.py\
+├── .devsetup.sh
 ├── requirements.txt\
 ├── README.md               
              
@@ -63,7 +64,7 @@ The app fetches them automatically the first time it runs and caches them.
 git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git \
 cd HCD-book-recommender
 
-# 2. One-Liner bootstrap which exectues a script where we create a venv, install dependencies and handles common pitfalls and issues
+# 2. One-Liner bootstrap which exectues a script where we create a venv, install dependencies and handle common pitfalls and issues.
 ./devsetup.sh           # ← one‑liner bootstrap
 
 # 3. Activate the virtual environment
