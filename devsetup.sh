@@ -15,7 +15,7 @@ set -euo pipefail
 ### 0️⃣  Prep
 PROJECT_ROOT="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &>/dev/null && pwd )"
 cd "$PROJECT_ROOT"
-PYTHON_BIN="${PYTHON_BIN:-python3.12}"        # override with PYTHON_BIN=python3.11 …
+PYTHON_BIN="${PYTHON_BIN:-python3.12}"    
 
 echo "▸ Creating / re‑using virtual‑env at .venv/"
 if [[ ! -d .venv ]]; then
@@ -24,7 +24,7 @@ fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
-### 1️⃣  Python deps
+### Python deps
 echo "▸ Installing Python packages (this may take a minute)…"
 python -m pip install --upgrade pip wheel >/dev/null
 # Streamlit pins packaging<25; install it first to avoid resolver hiccup
@@ -34,7 +34,7 @@ python -m pip install "packaging<25" >/dev/null
 python -m pip install -r requirements.txt >/dev/null
 python -m pip install streamlit torch faiss-cpu >/dev/null
 
-### 2️⃣  macOS / Apple‑silicon OpenMP fix
+### macOS / Apple‑silicon OpenMP fix
 if [[ "$(uname)" == "Darwin" ]]; then
   echo "▸ macOS detected – ensuring single system‑wide libomp"
   if ! command -v brew &>/dev/null; then
@@ -66,7 +66,7 @@ for p in site_pkgs.rglob("libomp*.dylib"):
 PY
 fi
 
-### 3️⃣  Cache Hugging Face dataset locally
+### Cache Hugging Face dataset locally
 echo "▸ Downloading parquet data from Hugging Face (first run only)…"
 python - <<'PY'
 from huggingface_hub import snapshot_download
@@ -84,7 +84,7 @@ snapshot_download(
 print("    ✓ parquet files cached in hf_cache/")
 PY
 
-### 4️⃣  Sanity‑check imports
+### Sanity‑check imports
 echo "▸ Verifying critical imports…"
 python - <<'PY'
 import importlib.util, pathlib, sys
