@@ -63,19 +63,11 @@ The app fetches them automatically the first time it runs and caches them.
 git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git \
 cd HCD-book-recommender
 
-# 2. Create environment (conda or venv)
-python3 -m venv .venv\
+# 2. One-Liner bootstrap which exectues a script where we create a venv, install dependencies and handles common pitfalls and issues
+./devsetup.sh           # ← one‑liner bootstrap
+
+# 3. Activate the virtual environment
 source .venv/bin/activate
 
-# 3. Install deps
-pip install -r requirements.txt
-# ➜ ~1 GB download inc. Longformer / Zephyr weights
-
-# 4. Set HF token for Zephyr endpoint
-export HF_API_TOKEN= "Token present in the secrets.toml file"
-
-# 5. Run
-streamlit run streamlit_app.py
-
-
-### Note: Ideally this should work but 
+# 5. Run the app
+python -m streamlit run streamlit_app.py
