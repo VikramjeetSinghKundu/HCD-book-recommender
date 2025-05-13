@@ -62,10 +62,11 @@ The app fetches them automatically the first time it runs and caches them.
 
 # 1. Clone
 git clone https://github.com/VikramjeetSinghKundu/HCD-book-recommender.git \
+
 cd HCD-book-recommender
 
 # 2. One-Liner bootstrap which exectues a script where we create a venv, install dependencies and handle common pitfalls and issues.
-./devsetup.sh           # ← one‑liner bootstrap
+./devsetup.sh           # auto‑creates a .venv, installs deps, fixes libomp, pulls the dataset from HuggingFace
 
 # 3. Activate the virtual environment
 source .venv/bin/activate
